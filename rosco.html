@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Rosco </title>
+<style>
+body{
+    margin:0;
+    background:radial-gradient(circle at center,#1a1a2e,#000);
+    font-family:Arial;
+    color:white;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+}
+
+h1{
+    margin:10px;
+    letter-spacing:3px;
+}
+
+#panel{
+    display:flex;
+    gap:40px;
+    margin-bottom:10px;
+    font-size:18px;
+}
+
+#rosco{
+    position:relative;
+    width:520px;
+    height:520px;
+    border-radius:50%;
+}
+
+.letra{
+    position:absolute;
+    width:60px;
+    height:60px;
+    border-radius:50%;
+    background:#0044ff;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-weight:bold;
+    font-size:20px;
+    transition:0.3s;
+}
+
+.activa{
+    box-shadow:0 0 20px white, 0 0 40px white;
+    transform:scale(1.1);
+}
+
+.correcto{ background:#00c853 !important; }
+.incorrecto{ background:#d50000 !important; }
+.pasada{ background:#ffab00 !important; }
+
+#final{
+    margin-top:20px;
+    font-size:22px;
+    display:none;
+}
+</style>
+</head>
+
+<body>
+
+<h1>ROSCO PRO</h1>
+
+<div id="panel">
+    <div>✔ Correctas: <span id="ok">0</span></div>
+    <div>✖ Incorrectas: <span id="bad">0</span></div>
+    <div>➜ Pasadas: <span id="pass">0</span></div>
+</div>
+
+<div id="rosco"></div>
+
+<div id="final"></div>
+
+<script>
+const letras = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ".split("");
+const rosco = document.getElementById("rosco");
+const okSpan = document.getElementById("ok");
+const badSpan = document.getElementById("bad");
+const passSpan = document.getElementById("pass");
+const finalDiv = document.getElementById("final");
+
+let actual = 0;
+let correctas = 0;
+let incorrectas = 0;
+let pasadas = 0;
+
+const radio = 210;
+const centro = 260;
+
+letras.forEach((letra, i) => {
+    let angulo = (i / letras.length) * (2 * Math.PI);
+    let x = centro + radio * Math.cos(angulo) - 30;
+    let y = centro + radio * Math.sin(angulo) - 30;
+
+    let div = document.createElement("div");
+    div.className = "letra";
+    div.innerText = letra;
+    div.style.left = x + "px";
+    div.style.top = y + "px";
+    rosco.appendChild(div);
+});
+
+function actualizarActiva(){
+    document.querySelectorAll(".letra").forEach((l,i)=>{
+        l.classList.remove("activa");
+        if(i===actual) l.classList.add("activa");
+    });
+}
+
+function sonido(freq){
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    osc.connect(ctx.destination);
+    osc.start();
+    setTimeout(()=>osc.stop(),150);
+}
+
+function terminar(){
+    finalDiv.style.display="block";
+    finalDiv.innerHTML = `
+        🎉 Juego terminado 🎉<br>
+        ✔ ${correctas} correctas<br>
+        ✖ ${incorrectas} incorrectas<br>
+        ➜ ${pasadas} pasadas<br><br>
+        Presiona R para reiniciar
+    `;
+}
+
+actualizarActiva();
+
+document.addEventListener("keydown", function(e){
+    if(actual >= letras.length) return;
+
+    let letrasDiv = document.querySelectorAll(".letra");
+    let key = e.key.toLowerCase();
+
+    if(key==="c"){
+        letrasDiv[actual].classList.add("correcto");
+        correctas++;
+        okSpan.textContent=correctas;
+        sonido(800);
+        actual++;
+    }
+
+    if(key==="i"){
+        letrasDiv[actual].classList.add("incorrecto");
+        incorrectas++;
+        badSpan.textContent=incorrectas;
+        sonido(200);
+        actual++;
+    }
+
+    if(key==="p"){
+        letrasDiv[actual].classList.add("pasada");
+        pasadas++;
+        passSpan.textContent=pasadas;
+        sonido(500);
+        actual++;
+    }
+
+    if(key==="r"){
+        location.reload();
+    }
+
+    actualizarActiva();
+
+    if(actual===letras.length){
+        terminar();
+    }
+});
+</script>
+
+</body>
+</html>
