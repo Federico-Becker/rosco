@@ -107,8 +107,9 @@ let actual = 0;
 let correctas = 0;
 let incorrectas = 0;
 let pasadas = 0;
-let tiempo = 600; // 10 minutos
+let tiempo = 600;
 let juegoTerminado = false;
+let intervalo;
 
 const radio = 210;
 const centro = 260;
@@ -156,6 +157,7 @@ function sonido(freq){
 
 function terminar(){
     juegoTerminado = true;
+    clearInterval(intervalo);
     finalDiv.style.display="block";
     finalDiv.innerHTML = `
         🎉 Juego terminado 🎉<br>
@@ -172,12 +174,11 @@ function actualizarTimer(){
     timerDiv.textContent = `⏳ ${min}:${seg<10?"0":""}${seg}`;
 }
 
-let intervalo = setInterval(()=>{
+intervalo = setInterval(()=>{
     if(juegoTerminado) return;
     tiempo--;
     actualizarTimer();
     if(tiempo<=0){
-        clearInterval(intervalo);
         terminar();
     }
 },1000);
@@ -186,6 +187,11 @@ actualizarTimer();
 actualizarActiva();
 
 document.addEventListener("keydown", function(e){
+    if(e.key.toLowerCase()==="r"){
+        location.reload();
+        return;
+    }
+
     if(juegoTerminado) return;
 
     let letrasDiv = document.querySelectorAll(".letra");
@@ -199,6 +205,7 @@ document.addEventListener("keydown", function(e){
 
     if(key==="c"){
         estados[actual]="correcto";
+        letrasDiv[actual].classList.remove("pasada");
         letrasDiv[actual].classList.add("correcto");
         correctas++;
         okSpan.textContent=correctas;
@@ -208,6 +215,7 @@ document.addEventListener("keydown", function(e){
 
     if(key==="i"){
         estados[actual]="incorrecto";
+        letrasDiv[actual].classList.remove("pasada");
         letrasDiv[actual].classList.add("incorrecto");
         incorrectas++;
         badSpan.textContent=incorrectas;
@@ -218,22 +226,17 @@ document.addEventListener("keydown", function(e){
     if(key==="p"){
         if(estados[actual]!=="pasada"){
             estados[actual]="pasada";
+            letrasDiv[actual].classList.add("pasada");
             pasadas++;
             passSpan.textContent=pasadas;
         }
-        letrasDiv[actual].classList.add("pasada");
         sonido(500);
         siguienteDisponible();
-    }
-
-    if(key==="r"){
-        location.reload();
     }
 
     actualizarActiva();
 
     if(estados.every(e => e==="correcto" || e==="incorrecto")){
-        clearInterval(intervalo);
         terminar();
     }
 });
