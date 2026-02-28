@@ -2,7 +2,8 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Rosco </title>
+<title>Rosco</title>
+
 <style>
 body{
     margin:0;
@@ -24,6 +25,18 @@ h1{
     gap:40px;
     margin-bottom:10px;
     font-size:18px;
+}
+
+#timer{
+    position:absolute;
+    right:40px;
+    top:120px;
+    font-size:28px;
+    font-weight:bold;
+    background:#111;
+    padding:15px 25px;
+    border-radius:10px;
+    box-shadow:0 0 15px #00ffff;
 }
 
 #rosco{
@@ -66,13 +79,15 @@ h1{
 
 <body>
 
-<h1>ROSCO </h1>
+<h1>ROSCO</h1>
 
 <div id="panel">
     <div>✔ Correctas: <span id="ok">0</span></div>
     <div>✖ Incorrectas: <span id="bad">0</span></div>
     <div>➜ Pasadas: <span id="pass">0</span></div>
 </div>
+
+<div id="timer">⏳ 10:00</div>
 
 <div id="rosco"></div>
 
@@ -85,11 +100,15 @@ const okSpan = document.getElementById("ok");
 const badSpan = document.getElementById("bad");
 const passSpan = document.getElementById("pass");
 const finalDiv = document.getElementById("final");
+const timerDiv = document.getElementById("timer");
 
+let estados = new Array(letras.length).fill("pendiente");
 let actual = 0;
 let correctas = 0;
 let incorrectas = 0;
 let pasadas = 0;
+let tiempo = 600; // 10 minutos
+let juegoTerminado = false;
 
 const radio = 210;
 const centro = 260;
@@ -110,8 +129,19 @@ letras.forEach((letra, i) => {
 function actualizarActiva(){
     document.querySelectorAll(".letra").forEach((l,i)=>{
         l.classList.remove("activa");
-        if(i===actual) l.classList.add("activa");
+        if(i===actual && estados[i]!=="correcto" && estados[i]!=="incorrecto"){
+            l.classList.add("activa");
+        }
     });
+}
+
+function siguienteDisponible(){
+    let vueltas = 0;
+    do{
+        actual = (actual + 1) % letras.length;
+        vueltas++;
+        if(vueltas > letras.length) break;
+    }while(estados[actual]==="correcto" || estados[actual]==="incorrecto");
 }
 
 function sonido(freq){
@@ -125,6 +155,7 @@ function sonido(freq){
 }
 
 function terminar(){
+    juegoTerminado = true;
     finalDiv.style.display="block";
     finalDiv.innerHTML = `
         🎉 Juego terminado 🎉<br>
@@ -135,36 +166,64 @@ function terminar(){
     `;
 }
 
+function actualizarTimer(){
+    let min = Math.floor(tiempo/60);
+    let seg = tiempo % 60;
+    timerDiv.textContent = `⏳ ${min}:${seg<10?"0":""}${seg}`;
+}
+
+let intervalo = setInterval(()=>{
+    if(juegoTerminado) return;
+    tiempo--;
+    actualizarTimer();
+    if(tiempo<=0){
+        clearInterval(intervalo);
+        terminar();
+    }
+},1000);
+
+actualizarTimer();
 actualizarActiva();
 
 document.addEventListener("keydown", function(e){
-    if(actual >= letras.length) return;
+    if(juegoTerminado) return;
 
     let letrasDiv = document.querySelectorAll(".letra");
     let key = e.key.toLowerCase();
 
+    if(estados[actual]==="correcto" || estados[actual]==="incorrecto"){
+        siguienteDisponible();
+        actualizarActiva();
+        return;
+    }
+
     if(key==="c"){
+        estados[actual]="correcto";
         letrasDiv[actual].classList.add("correcto");
         correctas++;
         okSpan.textContent=correctas;
         sonido(800);
-        actual++;
+        siguienteDisponible();
     }
 
     if(key==="i"){
+        estados[actual]="incorrecto";
         letrasDiv[actual].classList.add("incorrecto");
         incorrectas++;
         badSpan.textContent=incorrectas;
         sonido(200);
-        actual++;
+        siguienteDisponible();
     }
 
     if(key==="p"){
+        if(estados[actual]!=="pasada"){
+            estados[actual]="pasada";
+            pasadas++;
+            passSpan.textContent=pasadas;
+        }
         letrasDiv[actual].classList.add("pasada");
-        pasadas++;
-        passSpan.textContent=pasadas;
         sonido(500);
-        actual++;
+        siguienteDisponible();
     }
 
     if(key==="r"){
@@ -173,7 +232,8 @@ document.addEventListener("keydown", function(e){
 
     actualizarActiva();
 
-    if(actual===letras.length){
+    if(estados.every(e => e==="correcto" || e==="incorrecto")){
+        clearInterval(intervalo);
         terminar();
     }
 });
