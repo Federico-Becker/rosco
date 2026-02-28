@@ -39,6 +39,24 @@ h1{
     box-shadow:0 0 15px #00ffff;
 }
 
+#startBtn{
+    position:absolute;
+    right:40px;
+    top:200px;
+    padding:12px 25px;
+    font-size:18px;
+    border:none;
+    border-radius:8px;
+    background:#00c853;
+    color:white;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+#startBtn:hover{
+    transform:scale(1.1);
+}
+
 #rosco{
     position:relative;
     width:520px;
@@ -88,9 +106,9 @@ h1{
 </div>
 
 <div id="timer">⏳ 10:00</div>
+<button id="startBtn">▶ INICIAR</button>
 
 <div id="rosco"></div>
-
 <div id="final"></div>
 
 <script>
@@ -101,6 +119,7 @@ const badSpan = document.getElementById("bad");
 const passSpan = document.getElementById("pass");
 const finalDiv = document.getElementById("final");
 const timerDiv = document.getElementById("timer");
+const startBtn = document.getElementById("startBtn");
 
 let estados = new Array(letras.length).fill("pendiente");
 let actual = 0;
@@ -109,7 +128,8 @@ let incorrectas = 0;
 let pasadas = 0;
 let tiempo = 600;
 let juegoTerminado = false;
-let intervalo;
+let juegoIniciado = false;
+let intervalo = null;
 
 const radio = 210;
 const centro = 260;
@@ -174,25 +194,35 @@ function actualizarTimer(){
     timerDiv.textContent = `⏳ ${min}:${seg<10?"0":""}${seg}`;
 }
 
-intervalo = setInterval(()=>{
-    if(juegoTerminado) return;
-    tiempo--;
-    actualizarTimer();
-    if(tiempo<=0){
-        terminar();
-    }
-},1000);
+startBtn.addEventListener("click", function(){
+    if(juegoIniciado) return;
+
+    juegoIniciado = true;
+    startBtn.disabled = true;
+    startBtn.style.background = "#555";
+
+    intervalo = setInterval(()=>{
+        if(juegoTerminado) return;
+        tiempo--;
+        actualizarTimer();
+        if(tiempo<=0){
+            terminar();
+        }
+    },1000);
+
+    actualizarActiva();
+});
 
 actualizarTimer();
-actualizarActiva();
 
 document.addEventListener("keydown", function(e){
+
     if(e.key.toLowerCase()==="r"){
         location.reload();
         return;
     }
 
-    if(juegoTerminado) return;
+    if(!juegoIniciado || juegoTerminado) return;
 
     let letrasDiv = document.querySelectorAll(".letra");
     let key = e.key.toLowerCase();
